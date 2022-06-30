@@ -1,4 +1,5 @@
 //ImageJ Macro to analyse COVID infected cells
+hideWindows = false;  //set to true for normal use, false for debugging
 run("Collect Garbage");
 setOption("ExpandableArrays", true); //allow expandable arrays
 fs = File.separator; // To handle different OSs file systems
@@ -7,6 +8,8 @@ parentPath = File.getParent(filePath);  //define parent folder of images
 fileList = getFileList(parentPath);  //get list of files in folder
 fileList = Array.sort(fileList);  //sort alphabetically
 open(filePath);  //open the selected image
+print("\\Clear");
+print("EVOS Analyser is Running");
 
 //Get info about the current image
 Stack.getDimensions(width, height, channels, slices, frames);
@@ -24,14 +27,15 @@ for (i = 0; i < frames; i++) {
 //create popup 
 Dialog.createNonBlocking("COVID Analysis");
 Dialog.addMessage("Assign Channels for Analysis");
-Dialog.addChoice("Select Nuclear Marker Channel", channelList, ""+channels-1);
+Dialog.addChoice("Select Nuclear Marker Channel", channelList, 3);
 Dialog.addMessage("");
 Dialog.addMessage("Select the analysis required");
 Dialog.addCheckbox("Infection", false);
+Dialog.addMessage("Mortality Analysis requires Infection Analysis");
 Dialog.addCheckbox("Mortality", false);
 Dialog.addMessage("");
-Dialog.addChoice("Select Infection Marker Channel", channelList, "0");
-Dialog.addChoice("Select Mortality Marker Channel", channelList, ""+channels-2);
+Dialog.addChoice("Select Infection Marker Channel", channelList, 2);
+Dialog.addChoice("Select Mortality Marker Channel", channelList, 1);
 Dialog.show();
 
 //get values from dialog window
@@ -45,7 +49,6 @@ if(mortalityCheckBox >0){infectionCheckBox = 1;} //mortality analysis requires i
 
 //close current image
 close("*");
-print("\\Clear");
 
 //create results file with column titles
 output = "Well\tTimepoint\tMarked Nucleii Count";
@@ -57,7 +60,7 @@ File.saveString(output, parentPath + "_results.txt");
 startTime = getTime();  //time run
 //Process images
 for (i = 0; i < fileList.length; i++) {
-	setBatchMode(true);  //enable background processing
+	if(hideWindows == true){setBatchMode(true);}else{setBatchMode(false);}  //enable background processing if true
 	//filter for .tif files
 	if ((endsWith(fileList[i], ".TIF"))||(endsWith(fileList[i], ".tif"))){ 
 		open(fileList[i]); //open file
@@ -149,10 +152,10 @@ for (i = 0; i < fileList.length; i++) {
 			output = output + "\r\n";
 		}
 		File.append(output, parentPath + "_results.txt"); //write results to file		
-		close("*");  //close all image windows	
+		if(hideWindows == true) close("*");  //close all image windows	
 	}
 }
-close("Results");
+if(hideWindows == true) close("Results");
 
 //function to detect particles and count them
 function analyseChannel(channelNumber){
@@ -183,9 +186,11 @@ function analyseChannel(channelNumber){
 	}
 	
 	//close windows
-	close("Channel-"+channelNumber);
-	close("Channel-"+channelNumber+"-ROIs");
-	close("Drawing of Channel-"+channelNumber+"-ROIs");
+	if(hideWindows == true) {
+		close("Channel-"+channelNumber);
+		close("Channel-"+channelNumber+"-ROIs");
+		close("Drawing of Channel-"+channelNumber+"-ROIs");
+	}
 	return countArray;
 }
 
@@ -194,3 +199,4 @@ runTime = ((getTime() - startTime)/1000);  //calculate runtime in secs
 print("run time = "+runTime);
 setBatchMode(false);
 showMessage("Analysis Complete", "Put down that whiskey, your analysis completed in "+runTime+"s");
+exit;

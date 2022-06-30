@@ -25,12 +25,12 @@ if($inputResult -eq "OK") {
     New-ItemProperty -Path HKCU:\Software\EVOS_Converter -name inputPath -Value $inputPath -Force > $null #save folder path of input file to registry for next time
 
     #ask user to move or copy files
-    $ButtonType = [System.Windows.MessageBoxButton]::YesNoCancel
-    $MessageIcon = [System.Windows.MessageBoxImage]::Question
     $MessageTitle = "Copy/Move Files"
     $MessageBody = "Would you like to Copy the original files to a new sub-directory`r`n`r`nYes = Copy Files, No = Move Files"
-    $copyFiles = [System.Windows.MessageBox]::Show($MessageBody,$MessageTitle,$ButtonType,$MessageIcon)
-    $copyFiles.activate
+    [void] [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic") 
+    $copyFiles = [Microsoft.VisualBasic.Interaction]::MsgBox($MessageBody, "YesNoCancel,SystemModal,Question,DefaultButton1", $MessageTitle)
+
+    #$copyFiles.activate
     if($copyFiles -eq 'Cancel'){
         "user aborted at Copy/Move"
         exit
