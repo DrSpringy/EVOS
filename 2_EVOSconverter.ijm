@@ -23,36 +23,68 @@ function processFolder(input, output) {
 			wellPath = input + folderName + fs; //create well path to check for files to process
 			wellFileList = getFileList(wellPath);	//get list of files in the well folder	
 			wellFileList = Array.sort(wellFileList); //sort names alphabetically	
-			wellFileCount = tifFileCount = channelCount = 0;  //reset counters
+			wellFileCount = tifFileCount = channelCount = zCount = 0;  //reset counters
 			channelNumberArray = newArray();
 			wellFileCount = wellFileList.length;  //get total number of files in the folder
-        	print("Processing Well "+folderName);
+
 			for(j = 0; j < wellFileCount; j++) { //for every file
 				if ((endsWith(wellFileList[j], ".TIF"))||(endsWith(wellFileList[j], ".tif"))){ //filter for .tif files
 					tifFileCount++;  //count the number of .tif files
 					if(wellFileList[j].matches(".*_p00_.*")){ //if the file is from timepoint zero
-						channelCount++; //channel number = count number of filenames with p00
+						if(wellFileList[j].matches(".*_z.*_.*")){ //if there are z slices
+							zCount++; //count number of z slices
+							if(wellFileList[j].matches(".*_z00_.*")){
+								channelCount++; //channel number = count number of filenames with p00
+							}
+						}else {
+							// no z slices
+							channelCount++; //channel number = count number of filenames with p00
+						}
 						channelPos = (lengthOf(wellFileList[j]) - 5); 
-						print("channelPos="+channelPos);
 						channelNumber = substring(wellFileList[j], channelPos, channelPos+1); //get the channel number from filename
-						print(channelNumber);
 						channelNumberArray[channelCount-1] = channelNumber;  //store channel number in array for use later
-
 					}
 				}			
 			}
+
+			//timepoint number = total number of files/channel number
+			if(zCount > 1){
+				zCount = zCount/channelCount;
+				timePoints = tifFileCount/channelCount/zCount;
+			}else{
+				zCount = 1;
+				timePoints = tifFileCount/channelCount; 
+			}	
 			
-			timePoints = tifFileCount/channelCount; //timepoint number = total number of files/channel number
+			a = "Processing Well "+folderName;
+			b = "total stack size = "+tifFileCount;
+			c = "Channels = "+channelCount;
+			d = "Z Slices = "+zCount;
+			e = "Timepoints = "+timePoints;
+			print(a + " : " + b + ", " + c + ", " + d + ", " + e);
 			
 			//import images into a stack
 			File.openSequence(wellPath, "count="+tifFileCount+",sort");
 
 			//Create a Hyperstack
 			if(nSlices == tifFileCount){  //if the files all imported correctly
-				run("Stack to Hyperstack...", "order=xyczt(default) channels=" + channelCount + " slices=1 frames=" + timePoints + " display=Color");
+				run("Stack to Hyperstack...", "order=xyczt(default) channels=" + channelCount + " slices=" + zCount + " frames=" + timePoints + " display=Color");
+				
 				//False colour the Hyperstack channels
 				for(k=1;k<=channelCount;k++){
 					setColours(k,channelNumberArray[k-1]);
+				}
+				
+				//adjust pixel size
+				getPixelSize(unit, pw, ph, pd);
+				if(unit == "inches"){
+					xSize = pw*25400;
+					ySize = ph*25400;
+					zSize = pd*25400;
+					Stack.setXUnit("micron");
+					Stack.setYUnit("micron");
+					Stack.setZUnit("micron");
+					run("Properties...", "pixel_width=" + xSize + " pixel_height=" + ySize + " voxel_depth=" + zSize);
 				}
 			}
 

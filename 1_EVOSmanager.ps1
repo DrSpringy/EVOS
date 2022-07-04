@@ -45,11 +45,22 @@ if($inputResult -eq "OK") {
     
     #get unique well names and create an array
     $wellPrefix = "_0_"
-    $wellList = @()
+    $wellListTemp = $wellList = @()
+    $FOVexist = $false
     foreach($tif in $rawTifNames){
-        $well = $tif.Substring($($tif.IndexOf($wellPrefix))+3, 3) 
-        if($wellList -notcontains $well){$wellList += $well}
+        $fullWellName = $tif.Substring($($tif.IndexOf($wellPrefix))+3, 6) 
+            if($fullWellName -match "f01"){
+                $FOVexist = $true
+            }else {$FOVexist = $false}
+        if($wellListTemp -notcontains $fullWellName){$wellListTemp += $fullWellName}
     }
+
+    if(!$FOVexist){
+        foreach($fullWellName in $wellListTemp){
+            $well = $fullWellName.Substring(0,3)
+            if($wellList -notcontains $well){$wellList += $well}
+        }
+    }else{$wellList = $wellListTemp}
 
     #create a folder for each well and copy files for that well into the matching folder
     $runError = $false
@@ -64,7 +75,7 @@ if($inputResult -eq "OK") {
                 foreach($tif in $rawTifNames){
                     if($tif -match $well){ #if file belongs to well, move file to sub-folder
                         If($copyFiles -eq 'Yes'){
-                            Copy-Item -Path $inputPath\$tif -Destination "$newPath\" #copy files to new sub-folder
+                            Copy-Item -Path $inputPath\$tif -Destination "$newPath\"  #copy files to new sub-folder
                         }Else{
                             Move-Item -Path $inputPath\$tif -Destination $newPath #move files to new sub-folder
                         }
