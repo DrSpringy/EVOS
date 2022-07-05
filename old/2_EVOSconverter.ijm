@@ -1,5 +1,5 @@
-setBatchMode(true);
-run("Collect Garbage");
+setBatchMode(true);  //run in background for speed
+run("Collect Garbage");  //free imagej memory
 setOption("ExpandableArrays", true); //allow expandable arrays
 fs = File.separator; // To handle different OSs file systems
 inputPath = getDirectory("Please select the 'Processed' Folder");    //top level directory

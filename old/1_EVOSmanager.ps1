@@ -51,7 +51,7 @@ if($inputResult -eq "OK") {
         $fullWellName = $tif.Substring($($tif.IndexOf($wellPrefix))+3, 6) 
             if($fullWellName -match "f01"){
                 $FOVexist = $true
-            }else {$FOVexist = $false}
+            }
         if($wellListTemp -notcontains $fullWellName){$wellListTemp += $fullWellName}
     }
 
